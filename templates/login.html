@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}تسجيل الدخول - إدارة مهام مركز الموهوبين بحائل{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="mb-0">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    تسجيل الدخول
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-2"></i>
+                            اسم المستخدم
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-2"></i>
+                            كلمة المرور
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            دخول
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="mb-0">ليس لديك حساب؟</p>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-2"></i>
+                        إنشاء حساب جديد
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Default Admin Info -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    معلومات المدير الافتراضي
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>اسم المستخدم:</strong>
+                    </div>
+                    <div class="col-6">
+                        <code>admin</code>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>كلمة المرور:</strong>
+                    </div>
+                    <div class="col-6">
+                        <code>admin123</code>
+                    </div>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    يُنصح بتغيير كلمة المرور بعد أول تسجيل دخول
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

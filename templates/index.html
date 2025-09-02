@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}الصفحة الرئيسية - إدارة مهام مركز الموهوبين بحائل{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <div class="card">
+                <div class="card-body p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-graduation-cap fa-5x text-primary mb-3"></i>
+                    </div>
+                    <h1 class="display-4 fw-bold text-primary mb-3">
+                        مرحباً بكم في نظام إدارة المهام
+                    </h1>
+                    <h2 class="h3 text-secondary mb-4">
+                        مركز الموهوبين بحائل
+                    </h2>
+                    <p class="lead text-muted mb-4">
+                        نظام شامل لإدارة وتوزيع المهام وإعداد التقارير لجميع وحدات المركز
+                    </p>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg me-md-2">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            تسجيل الدخول
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>
+                            إنشاء حساب جديد
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mb-5">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tasks fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">إدارة المهام</h5>
+                        <p class="card-text">
+                            توزيع وتتبع المهام لجميع الموظفين في الوحدات المختلفة
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">التقارير والإحصائيات</h5>
+                        <p class="card-text">
+                            تقارير شاملة عن أداء الموظفين وحالة المهام
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">إدارة المستخدمين</h5>
+                        <p class="card-text">
+                            نظام صلاحيات متقدم للمسميات الوظيفية المختلفة
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bell fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">التنبيهات</h5>
+                        <p class="card-text">
+                            تنبيهات تلقائية للمهام المتأخرة والمواعيد النهائية
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Departments Section -->
+        <div class="card mb-5">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-building me-2"></i>
+                    وحدات العمل
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-cog text-primary me-3"></i>
+                            <span>وحدة الإدارة</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-bullhorn text-success me-3"></i>
+                            <span>وحدة العلاقات العامة والإعلام</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-lightbulb text-warning me-3"></i>
+                            <span>وحدة البرامج الإثرائية</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-trophy text-info me-3"></i>
+                            <span>وحدة المسابقات</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-graduate text-danger me-3"></i>
+                            <span>وحدة شؤون الطلاب</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roles Section -->
+        <div class="card mb-5">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-tie me-2"></i>
+                    المسميات الوظيفية
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-crown text-warning fa-2x mb-2"></i>
+                            <div class="fw-bold">مدير</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-user-shield text-primary fa-2x mb-2"></i>
+                            <div class="fw-bold">وكيل</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-chalkboard-teacher text-success fa-2x mb-2"></i>
+                            <div class="fw-bold">معلم موهوبين</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-user-cog text-info fa-2x mb-2"></i>
+                            <div class="fw-bold">إداري</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Creator Info -->
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary">
+                    <i class="fas fa-code me-2"></i>
+                    من إبداع
+                </h5>
+                <h4 class="text-dark fw-bold">
+                    الأستاذ: متعب بن مطير المتعب
+                </h4>
+                <p class="text-muted mb-0">
+                    نظام إدارة مهام مركز الموهوبين بحائل
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

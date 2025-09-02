@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - إدارة مهام مركز الموهوبين بحائل{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-1">مرحباً، {{ user.full_name }}</h2>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-user-tie me-2"></i>{{ user.role }} - {{ user.department }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="text-muted">
+                            <i class="fas fa-calendar me-2"></i>
+                            <span id="current-date"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ total_tasks }}</div>
+                    <div>إجمالي المهام</div>
+                </div>
+                <div>
+                    <i class="fas fa-tasks fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ pending_tasks }}</div>
+                    <div>قيد التنفيذ</div>
+                </div>
+                <div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ completed_tasks }}</div>
+                    <div>مكتملة</div>
+                </div>
+                <div>
+                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #dc3545 0%, #e91e63 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ overdue_tasks }}</div>
+                    <div>متأخرة</div>
+                </div>
+                <div>
+                    <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    إجراءات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('tasks') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-tasks me-2"></i>
+                            عرض جميع المهام
+                        </a>
+                    </div>
+                    {% if session.role in ['مدير', 'وكيل'] %}
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('new_task') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-plus me-2"></i>
+                            إنشاء مهمة جديدة
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('reports') }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            عرض التقارير
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('tasks', status='قيد التنفيذ') }}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-clock me-2"></i>
+                            المهام الجارية
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Tasks -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    المهام الحديثة
+                </h5>
+                <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-outline-primary">
+                    عرض الكل
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>عنوان المهمة</th>
+                                <th>الأولوية</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الموعد النهائي</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in recent_tasks %}
+                            <tr class="task-priority-{{ 'high' if task.priority == 'عالي' else 'medium' if task.priority == 'متوسط' else 'low' }}">
+                                <td>
+                                    <strong>{{ task.title }}</strong>
+                                    {% if task.description %}
+                                    <br><small class="text-muted">{{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if task.priority == 'عالي' else 'warning' if task.priority == 'متوسط' else 'success' }}">
+                                        {{ task.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ 'new' if task.status == 'جديد' else 'progress' if task.status == 'قيد التنفيذ' else 'completed' if task.status == 'مكتمل' else 'overdue' }}">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ task.created_at.strftime('%Y-%m-%d') }}</small>
+                                </td>
+                                <td>
+                                    {% if task.due_date %}
+                                    <small class="{{ 'text-danger' if task.due_date < datetime.utcnow() and task.status != 'مكتمل' else 'text-muted' }}">
+                                        {{ task.due_date.strftime('%Y-%m-%d') }}
+                                    </small>
+                                    {% else %}
+                                    <small class="text-muted">غير محدد</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.status != 'مكتمل' %}
+                                    <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}" class="d-inline">
+                                        <select name="status" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                            <option value="جديد" {{ 'selected' if task.status == 'جديد' else '' }}>جديد</option>
+                                            <option value="قيد التنفيذ" {{ 'selected' if task.status == 'قيد التنفيذ' else '' }}>قيد التنفيذ</option>
+                                            <option value="مكتمل" {{ 'selected' if task.status == 'مكتمل' else '' }}>مكتمل</option>
+                                        </select>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-success">
+                                        <i class="fas fa-check-circle"></i>
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا توجد مهام حديثة</p>
+                    {% if session.role in ['مدير', 'وكيل'] %}
+                    <a href="{{ url_for('new_task') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        إنشاء مهمة جديدة
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if overdue_tasks > 0 %}
+<!-- Overdue Tasks Alert -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                <div>
+                    <h6 class="alert-heading mb-1">تنبيه: مهام متأخرة</h6>
+                    <p class="mb-0">
+                        لديك {{ overdue_tasks }} مهمة متأخرة عن الموعد المحدد. 
+                        <a href="{{ url_for('tasks') }}" class="alert-link">عرض المهام المتأخرة</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/ar.min.js"></script>
+<script>
+    moment.locale('ar');
+    
+    // تحديث التاريخ
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateElement = document.querySelector('.fa-calendar').parentElement;
+        if (dateElement) {
+            dateElement.innerHTML = '<i class="fas fa-calendar me-2"></i>' + moment().format('dddd، DD MMMM YYYY');
+        }
+    });
+    
+    // تحديث الصفحة كل 5 دقائق للحصول على أحدث البيانات
+    setTimeout(function() {
+        location.reload();
+    }, 300000); // 5 minutes
+</script>
+{% endblock %}
+{% endblock %}

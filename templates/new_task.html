@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}إنشاء مهمة جديدة - إدارة مهام مركز الموهوبين بحائل{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>
+                    إنشاء مهمة جديدة
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">
+                                <i class="fas fa-heading me-2"></i>
+                                عنوان المهمة *
+                            </label>
+                            <input type="text" class="form-control" id="title" name="title" required 
+                                   placeholder="أدخل عنوان المهمة">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="priority" class="form-label">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                الأولوية *
+                            </label>
+                            <select class="form-select" id="priority" name="priority" required>
+                                <option value="">اختر الأولوية</option>
+                                <option value="عالي">عالي</option>
+                                <option value="متوسط" selected>متوسط</option>
+                                <option value="منخفض">منخفض</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left me-2"></i>
+                            وصف المهمة
+                        </label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="أدخل وصف تفصيلي للمهمة (اختياري)"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">
+                                <i class="fas fa-building me-2"></i>
+                                وحدة العمل *
+                            </label>
+                            <select class="form-select" id="department" name="department" required>
+                                <option value="">اختر وحدة العمل</option>
+                                <option value="وحدة الإدارة">وحدة الإدارة</option>
+                                <option value="وحدة العلاقات العامة والإعلام">وحدة العلاقات العامة والإعلام</option>
+                                <option value="وحدة البرامج الإثرائية">وحدة البرامج الإثرائية</option>
+                                <option value="وحدة المسابقات">وحدة المسابقات</option>
+                                <option value="وحدة شؤون الطلاب">وحدة شؤون الطلاب</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="assigned_to" class="form-label">
+                                <i class="fas fa-user me-2"></i>
+                                تعيين إلى
+                            </label>
+                            <select class="form-select" id="assigned_to" name="assigned_to">
+                                <option value="">اختر الموظف (اختياري)</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" data-department="{{ user.department }}" data-role="{{ user.role }}">
+                                    {{ user.full_name }} - {{ user.role }} ({{ user.department }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">يمكن ترك هذا الحقل فارغاً وتعيين المهمة لاحقاً</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="due_date" class="form-label">
+                                <i class="fas fa-calendar me-2"></i>
+                                الموعد النهائي
+                            </label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" 
+                                   min="{{ datetime.now().strftime('%Y-%m-%d') }}">
+                            <div class="form-text">اختياري - يمكن تحديد موعد نهائي للمهمة</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">معاينة الأولوية</label>
+                            <div class="p-3 border rounded" id="priority-preview">
+                                <span class="badge bg-warning" id="priority-badge">متوسط</span>
+                                <small class="text-muted d-block mt-1" id="priority-description">
+                                    مهمة ذات أولوية متوسطة
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- معاينة المهمة -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-eye me-2"></i>
+                                معاينة المهمة
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 id="preview-title" class="text-muted">عنوان المهمة سيظهر هنا</h6>
+                                    <p id="preview-description" class="text-muted small">وصف المهمة سيظهر هنا</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <strong>الوحدة:</strong>
+                                        <span id="preview-department" class="text-muted">غير محدد</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>المعين إليه:</strong>
+                                        <span id="preview-assignee" class="text-muted">غير محدد</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>الموعد النهائي:</strong>
+                                        <span id="preview-due-date" class="text-muted">غير محدد</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            العودة للمهام
+                        </a>
+                        
+                        <div>
+                            <button type="reset" class="btn btn-outline-warning me-2">
+                                <i class="fas fa-undo me-2"></i>
+                                إعادة تعيين
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                إنشاء المهمة
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // عناصر النموذج
+        const titleInput = document.getElementById('title');
+        const descriptionInput = document.getElementById('description');
+        const prioritySelect = document.getElementById('priority');
+        const departmentSelect = document.getElementById('department');
+        const assignedToSelect = document.getElementById('assigned_to');
+        const dueDateInput = document.getElementById('due_date');
+        
+        // عناصر المعاينة
+        const previewTitle = document.getElementById('preview-title');
+        const previewDescription = document.getElementById('preview-description');
+        const previewDepartment = document.getElementById('preview-department');
+        const previewAssignee = document.getElementById('preview-assignee');
+        const previewDueDate = document.getElementById('preview-due-date');
+        const priorityBadge = document.getElementById('priority-badge');
+        const priorityDescription = document.getElementById('priority-description');
+        
+        // تحديث معاينة الأولوية
+        function updatePriorityPreview() {
+            const priority = prioritySelect.value;
+            const priorityConfig = {
+                'عالي': {
+                    class: 'bg-danger',
+                    text: 'عالي',
+                    description: 'مهمة عاجلة تتطلب اهتماماً فورياً'
+                },
+                'متوسط': {
+                    class: 'bg-warning',
+                    text: 'متوسط',
+                    description: 'مهمة ذات أولوية متوسطة'
+                },
+                'منخفض': {
+                    class: 'bg-success',
+                    text: 'منخفض',
+                    description: 'مهمة يمكن تأجيلها عند الحاجة'
+                }
+            };
+            
+            const config = priorityConfig[priority] || priorityConfig['متوسط'];
+            priorityBadge.className = `badge ${config.class}`;
+            priorityBadge.textContent = config.text;
+            priorityDescription.textContent = config.description;
+        }
+        
+        // تحديث المعاينة العامة
+        function updatePreview() {
+            previewTitle.textContent = titleInput.value || 'عنوان المهمة سيظهر هنا';
+            previewDescription.textContent = descriptionInput.value || 'وصف المهمة سيظهر هنا';
+            previewDepartment.textContent = departmentSelect.value || 'غير محدد';
+            
+            const selectedAssignee = assignedToSelect.options[assignedToSelect.selectedIndex];
+            previewAssignee.textContent = selectedAssignee.value ? selectedAssignee.text : 'غير محدد';
+            
+            previewDueDate.textContent = dueDateInput.value ? 
+                moment(dueDateInput.value).format('DD/MM/YYYY') : 'غير محدد';
+        }
+        
+        // تصفية المستخدمين حسب الوحدة
+        function filterUsersByDepartment() {
+            const selectedDepartment = departmentSelect.value;
+            const assignedToOptions = assignedToSelect.querySelectorAll('option');
+            
+            assignedToOptions.forEach(option => {
+                if (option.value === '') {
+                    option.style.display = 'block';
+                    return;
+                }
+                
+                const userDepartment = option.getAttribute('data-department');
+                if (!selectedDepartment || userDepartment === selectedDepartment) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+            
+            // إعادة تعيين الاختيار إذا لم يعد متاحاً
+            const currentSelection = assignedToSelect.value;
+            if (currentSelection) {
+                const currentOption = assignedToSelect.querySelector(`option[value="${currentSelection}"]`);
+                if (currentOption && currentOption.style.display === 'none') {
+                    assignedToSelect.value = '';
+                }
+            }
+        }
+        
+        // ربط الأحداث
+        titleInput.addEventListener('input', updatePreview);
+        descriptionInput.addEventListener('input', updatePreview);
+        prioritySelect.addEventListener('change', function() {
+            updatePriorityPreview();
+            updatePreview();
+        });
+        departmentSelect.addEventListener('change', function() {
+            filterUsersByDepartment();
+            updatePreview();
+        });
+        assignedToSelect.addEventListener('change', updatePreview);
+        dueDateInput.addEventListener('change', updatePreview);
+        
+        // تحديث أولي
+        updatePriorityPreview();
+        updatePreview();
+        
+        // التحقق من صحة النموذج
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const title = titleInput.value.trim();
+            const priority = prioritySelect.value;
+            const department = departmentSelect.value;
+            
+            if (!title) {
+                alert('يرجى إدخال عنوان المهمة');
+                titleInput.focus();
+                e.preventDefault();
+                return;
+            }
+            
+            if (!priority) {
+                alert('يرجى اختيار أولوية المهمة');
+                prioritySelect.focus();
+                e.preventDefault();
+                return;
+            }
+            
+            if (!department) {
+                alert('يرجى اختيار وحدة العمل');
+                departmentSelect.focus();
+                e.preventDefault();
+                return;
+            }
+            
+            // تأكيد الإنشاء
+            const confirmMessage = `هل أنت متأكد من إنشاء هذه المهمة؟\n\nالعنوان: ${title}\nالأولوية: ${priority}\nالوحدة: ${department}`;
+            if (!confirm(confirmMessage)) {
+                e.preventDefault();
+            }
+        });
+        
+        // إعادة تعيين النموذج
+        document.querySelector('button[type="reset"]').addEventListener('click', function() {
+            setTimeout(() => {
+                updatePriorityPreview();
+                updatePreview();
+                filterUsersByDepartment();
+            }, 10);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

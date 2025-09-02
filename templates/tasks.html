@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}المهام - إدارة مهام مركز الموهوبين بحائل{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>
+            <i class="fas fa-tasks me-2"></i>
+            إدارة المهام
+        </h2>
+        <p class="text-muted">عرض وإدارة جميع المهام المعينة</p>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if session.role in ['مدير', 'وكيل'] %}
+        <a href="{{ url_for('new_task') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            مهمة جديدة
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>
+                    تصفية المهام
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">الحالة</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">جميع الحالات</option>
+                            <option value="جديد" {{ 'selected' if status_filter == 'جديد' else '' }}>جديد</option>
+                            <option value="قيد التنفيذ" {{ 'selected' if status_filter == 'قيد التنفيذ' else '' }}>قيد التنفيذ</option>
+                            <option value="مكتمل" {{ 'selected' if status_filter == 'مكتمل' else '' }}>مكتمل</option>
+                            <option value="متأخر" {{ 'selected' if status_filter == 'متأخر' else '' }}>متأخر</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="priority" class="form-label">الأولوية</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="">جميع الأولويات</option>
+                            <option value="عالي" {{ 'selected' if priority_filter == 'عالي' else '' }}>عالي</option>
+                            <option value="متوسط" {{ 'selected' if priority_filter == 'متوسط' else '' }}>متوسط</option>
+                            <option value="منخفض" {{ 'selected' if priority_filter == 'منخفض' else '' }}>منخفض</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>
+                            تصفية
+                        </button>
+                        <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>
+                            إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    قائمة المهام
+                </h6>
+                <span class="badge bg-primary">
+                    {{ tasks.total }} مهمة
+                </span>
+            </div>
+            <div class="card-body">
+                {% if tasks.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="25%">عنوان المهمة</th>
+                                <th width="15%">المعين إليه</th>
+                                <th width="10%">الوحدة</th>
+                                <th width="10%">الأولوية</th>
+                                <th width="10%">الحالة</th>
+                                <th width="10%">الموعد النهائي</th>
+                                <th width="15%">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks.items %}
+                            <tr class="task-priority-{{ 'high' if task.priority == 'عالي' else 'medium' if task.priority == 'متوسط' else 'low' }}">
+                                <td>{{ task.id }}</td>
+                                <td>
+                                    <div>
+                                        <strong>{{ task.title }}</strong>
+                                        {% if task.description %}
+                                        <br><small class="text-muted">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        بواسطة: {{ task.creator.full_name }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if task.assignee %}
+                                    <div>
+                                        <strong>{{ task.assignee.full_name }}</strong>
+                                        <br><small class="text-muted">{{ task.assignee.role }}</small>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">غير معين</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ task.department }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if task.priority == 'عالي' else 'warning' if task.priority == 'متوسط' else 'success' }}">
+                                        {{ task.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ 'new' if task.status == 'جديد' else 'progress' if task.status == 'قيد التنفيذ' else 'completed' if task.status == 'مكتمل' else 'overdue' }}">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if task.due_date %}
+                                    <small class="{{ 'text-danger fw-bold' if task.due_date < datetime.utcnow() and task.status != 'مكتمل' else 'text-muted' }}">
+                                        {{ task.due_date.strftime('%Y-%m-%d') }}
+                                        {% if task.due_date < datetime.utcnow() and task.status != 'مكتمل' %}
+                                        <br><span class="badge bg-danger">متأخر</span>
+                                        {% endif %}
+                                    </small>
+                                    {% else %}
+                                    <small class="text-muted">غير محدد</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group-vertical btn-group-sm" role="group">
+                                        <!-- تحديث الحالة -->
+                                        {% if (task.assigned_to == session.user_id or session.role in ['مدير', 'وكيل']) and task.status != 'مكتمل' %}
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-edit me-1"></i>
+                                                تحديث
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}">
+                                                        <input type="hidden" name="status" value="جديد">
+                                                        <button type="submit" class="dropdown-item {{ 'active' if task.status == 'جديد' else '' }}">
+                                                            <i class="fas fa-circle text-primary me-2"></i>جديد
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}">
+                                                        <input type="hidden" name="status" value="قيد التنفيذ">
+                                                        <button type="submit" class="dropdown-item {{ 'active' if task.status == 'قيد التنفيذ' else '' }}">
+                                                            <i class="fas fa-clock text-warning me-2"></i>قيد التنفيذ
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}">
+                                                        <input type="hidden" name="status" value="مكتمل">
+                                                        <button type="submit" class="dropdown-item {{ 'active' if task.status == 'مكتمل' else '' }}">
+                                                            <i class="fas fa-check-circle text-success me-2"></i>مكتمل
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- عرض التفاصيل -->
+                                        <button class="btn btn-outline-info btn-sm mt-1" data-bs-toggle="modal" data-bs-target="#taskModal{{ task.id }}">
+                                            <i class="fas fa-eye me-1"></i>
+                                            تفاصيل
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if tasks.pages > 1 %}
+                <nav aria-label="تصفح المهام" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if tasks.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('tasks', page=tasks.prev_num, status=status_filter, priority=priority_filter) }}">
+                                السابق
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in tasks.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != tasks.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('tasks', page=page_num, status=status_filter, priority=priority_filter) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if tasks.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('tasks', page=tasks.next_num, status=status_filter, priority=priority_filter) }}">
+                                التالي
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">لا توجد مهام</h5>
+                    <p class="text-muted">لم يتم العثور على مهام تطابق المعايير المحددة</p>
+                    {% if session.role in ['مدير', 'وكيل'] %}
+                    <a href="{{ url_for('new_task') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        إنشاء مهمة جديدة
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Detail Modals -->
+{% for task in tasks.items %}
+<div class="modal fade" id="taskModal{{ task.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tasks me-2"></i>
+                    تفاصيل المهمة
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="fw-bold">{{ task.title }}</h6>
+                        {% if task.description %}
+                        <p class="text-muted">{{ task.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <strong>الحالة:</strong>
+                            <span class="status-badge status-{{ 'new' if task.status == 'جديد' else 'progress' if task.status == 'قيد التنفيذ' else 'completed' if task.status == 'مكتمل' else 'overdue' }}">
+                                {{ task.status }}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>الأولوية:</strong>
+                            <span class="badge bg-{{ 'danger' if task.priority == 'عالي' else 'warning' if task.priority == 'متوسط' else 'success' }}">
+                                {{ task.priority }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>منشئ المهمة:</strong><br>
+                            <span class="text-muted">{{ task.creator.full_name }} ({{ task.creator.role }})</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>المعين إليه:</strong><br>
+                            {% if task.assignee %}
+                            <span class="text-muted">{{ task.assignee.full_name }} ({{ task.assignee.role }})</span>
+                            {% else %}
+                            <span class="text-muted">غير معين</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>الوحدة:</strong><br>
+                            <span class="text-muted">{{ task.department }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>تاريخ الإنشاء:</strong><br>
+                            <span class="text-muted">{{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if task.due_date %}
+                <div class="mb-3">
+                    <strong>الموعد النهائي:</strong><br>
+                    <span class="text-muted {{ 'text-danger fw-bold' if task.due_date < datetime.utcnow() and task.status != 'مكتمل' else '' }}">
+                        {{ task.due_date.strftime('%Y-%m-%d') }}
+                        {% if task.due_date < datetime.utcnow() and task.status != 'مكتمل' %}
+                        <span class="badge bg-danger ms-2">متأخر</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if task.completed_at %}
+                <div class="mb-3">
+                    <strong>تاريخ الإكمال:</strong><br>
+                    <span class="text-success">{{ task.completed_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script>
+    // تحديث تلقائي للصفحة كل 2 دقيقة
+    setTimeout(function() {
+        location.reload();
+    }, 120000);
+    
+    // تأكيد تحديث الحالة
+    document.querySelectorAll('form[action*="update_task_status"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const status = this.querySelector('input[name="status"]').value;
+            if (status === 'مكتمل') {
+                if (!confirm('هل أنت متأكد من أن هذه المهمة مكتملة؟')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
