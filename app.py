@@ -355,6 +355,9 @@ def reports():
 @login_required
 def profile():
     user = User.query.get(session['user_id'])
+    # إضافة إحصائيات المهام
+    user.total_tasks = Task.query.filter_by(assigned_to=user.id).count()
+    user.completed_tasks = Task.query.filter_by(assigned_to=user.id, status='مكتمل').count()
     return render_template('profile.html', user=user)
 
 # تغيير كلمة المرور
@@ -398,6 +401,9 @@ def change_password():
 @role_required(['مدير'])
 def manage_users():
     users = User.query.all()
+    # إضافة عدد المهام لكل مستخدم
+    for user in users:
+        user.task_count = Task.query.filter_by(assigned_to=user.id).count()
     return render_template('manage_users.html', users=users)
 
 # حذف مستخدم (للمدير فقط)
