@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import os
 from functools import wraps
+import uuid
 
 # إضافة datetime إلى السياق العام للقوالب
 def inject_datetime():
@@ -35,10 +37,50 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# إعدادات رفع الملفات
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'}
+
+# إنشاء مجلد الرفع إذا لم يكن موجوداً
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 db = SQLAlchemy(app)
 
-# تسجيل دالة السياق
+# دوال مساعدة للقوالب
+def get_file_icon(filename):
+    extension = filename.split('.')[-1].lower() if '.' in filename else ''
+    icon_map = {
+        'pdf': 'fas fa-file-pdf text-danger',
+        'doc': 'fas fa-file-word text-primary',
+        'docx': 'fas fa-file-word text-primary',
+        'xls': 'fas fa-file-excel text-success',
+        'xlsx': 'fas fa-file-excel text-success',
+        'ppt': 'fas fa-file-powerpoint text-warning',
+        'pptx': 'fas fa-file-powerpoint text-warning',
+        'jpg': 'fas fa-file-image text-info',
+        'jpeg': 'fas fa-file-image text-info',
+        'png': 'fas fa-file-image text-info',
+        'gif': 'fas fa-file-image text-info',
+        'txt': 'fas fa-file-alt text-secondary'
+    }
+    return icon_map.get(extension, 'fas fa-file text-secondary')
+
+def format_file_size(size_bytes):
+    if size_bytes == 0:
+        return "0 B"
+    size_names = ["B", "KB", "MB", "GB"]
+    i = 0
+    while size_bytes >= 1024 and i < len(size_names) - 1:
+        size_bytes /= 1024.0
+        i += 1
+    return f"{size_bytes:.1f} {size_names[i]}"
+
+# تسجيل دوال السياق
 app.context_processor(inject_datetime)
+app.jinja_env.globals.update(get_file_icon=get_file_icon)
+app.jinja_env.globals.update(format_file_size=format_file_size)
 
 # نماذج قاعدة البيانات
 class User(db.Model):
@@ -86,6 +128,43 @@ class TaskComment(db.Model):
     
     # العلاقات
     user = db.relationship('User', backref='comments')
+
+class Achievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    achievement_type = db.Column(db.String(50), nullable=False)  # شهادة، جائزة، إنجاز، دورة
+    date_achieved = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # المفاتيح الخارجية
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # العلاقات
+    user = db.relationship('User', backref='achievements')
+    files = db.relationship('AchievementFile', backref='achievement', lazy='dynamic', cascade='all, delete-orphan')
+
+class AchievementFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    file_type = db.Column(db.String(50), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # المفاتيح الخارجية
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievement.id'), nullable=False)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # العلاقات
+    uploader = db.relationship('User', backref='uploaded_files')
+
+# دالة للتحقق من امتدادات الملفات المسموحة
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # دالة للتحقق من تسجيل الدخول
 def login_required(f):
@@ -471,6 +550,190 @@ def reset_user_password(user_id):
     
     flash(f'تم إعادة تعيين كلمة مرور {user.full_name}. كلمة المرور الجديدة: {new_password}', 'info')
     return redirect(url_for('manage_users'))
+
+# ملف الإنجاز - عرض الإنجازات
+@app.route('/achievements')
+@login_required
+def achievements():
+    user = User.query.get(session['user_id'])
+    page = request.args.get('page', 1, type=int)
+    achievement_type_filter = request.args.get('type', '')
+    
+    query = Achievement.query.filter_by(user_id=user.id)
+    
+    if achievement_type_filter:
+        query = query.filter_by(achievement_type=achievement_type_filter)
+    
+    achievements = query.order_by(Achievement.date_achieved.desc()).paginate(
+        page=page, per_page=10, error_out=False
+    )
+    
+    return render_template('achievements.html', 
+                         achievements=achievements, 
+                         type_filter=achievement_type_filter)
+
+# ملف الإنجاز - إضافة إنجاز جديد
+@app.route('/achievements/new', methods=['GET', 'POST'])
+@login_required
+def new_achievement():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        achievement_type = request.form['achievement_type']
+        date_achieved_str = request.form['date_achieved']
+        
+        date_achieved = datetime.strptime(date_achieved_str, '%Y-%m-%d')
+        
+        achievement = Achievement(
+            title=title,
+            description=description,
+            achievement_type=achievement_type,
+            date_achieved=date_achieved,
+            user_id=session['user_id']
+        )
+        
+        db.session.add(achievement)
+        db.session.commit()
+        
+        # رفع الملفات إن وجدت
+        if 'files' in request.files:
+            files = request.files.getlist('files')
+            for file in files:
+                if file and file.filename != '' and allowed_file(file.filename):
+                    # إنشاء اسم ملف فريد
+                    filename = str(uuid.uuid4()) + '_' + secure_filename(file.filename)
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(file_path)
+                    
+                    # حفظ معلومات الملف في قاعدة البيانات
+                    achievement_file = AchievementFile(
+                        filename=filename,
+                        original_filename=file.filename,
+                        file_path=file_path,
+                        file_size=os.path.getsize(file_path),
+                        file_type=file.filename.rsplit('.', 1)[1].lower(),
+                        achievement_id=achievement.id,
+                        uploaded_by=session['user_id']
+                    )
+                    db.session.add(achievement_file)
+            
+            db.session.commit()
+        
+        flash('تم إضافة الإنجاز بنجاح', 'success')
+        return redirect(url_for('achievements'))
+    
+    return render_template('new_achievement.html')
+
+# ملف الإنجاز - تعديل إنجاز
+@app.route('/achievements/<int:achievement_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_achievement(achievement_id):
+    achievement = Achievement.query.get_or_404(achievement_id)
+    
+    # التحقق من الصلاحيات
+    if achievement.user_id != session['user_id']:
+        flash('ليس لديك صلاحية لتعديل هذا الإنجاز', 'error')
+        return redirect(url_for('achievements'))
+    
+    if request.method == 'POST':
+        achievement.title = request.form['title']
+        achievement.description = request.form['description']
+        achievement.achievement_type = request.form['achievement_type']
+        achievement.date_achieved = datetime.strptime(request.form['date_achieved'], '%Y-%m-%d')
+        achievement.updated_at = datetime.utcnow()
+        
+        # رفع ملفات جديدة إن وجدت
+        if 'files' in request.files:
+            files = request.files.getlist('files')
+            for file in files:
+                if file and file.filename != '' and allowed_file(file.filename):
+                    filename = str(uuid.uuid4()) + '_' + secure_filename(file.filename)
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(file_path)
+                    
+                    achievement_file = AchievementFile(
+                        filename=filename,
+                        original_filename=file.filename,
+                        file_path=file_path,
+                        file_size=os.path.getsize(file_path),
+                        file_type=file.filename.rsplit('.', 1)[1].lower(),
+                        achievement_id=achievement.id,
+                        uploaded_by=session['user_id']
+                    )
+                    db.session.add(achievement_file)
+        
+        db.session.commit()
+        flash('تم تحديث الإنجاز بنجاح', 'success')
+        return redirect(url_for('achievements'))
+    
+    return render_template('edit_achievement.html', achievement=achievement)
+
+# ملف الإنجاز - حذف إنجاز
+@app.route('/achievements/<int:achievement_id>/delete', methods=['POST'])
+@login_required
+def delete_achievement(achievement_id):
+    achievement = Achievement.query.get_or_404(achievement_id)
+    
+    # التحقق من الصلاحيات
+    if achievement.user_id != session['user_id']:
+        flash('ليس لديك صلاحية لحذف هذا الإنجاز', 'error')
+        return redirect(url_for('achievements'))
+    
+    # حذف الملفات المرتبطة
+    for file in achievement.files:
+        if os.path.exists(file.file_path):
+            os.remove(file.file_path)
+    
+    db.session.delete(achievement)
+    db.session.commit()
+    
+    flash('تم حذف الإنجاز بنجاح', 'success')
+    return redirect(url_for('achievements'))
+
+# ملف الإنجاز - حذف ملف
+@app.route('/achievements/files/<int:file_id>/delete', methods=['POST'])
+@login_required
+def delete_achievement_file(file_id):
+    file = AchievementFile.query.get_or_404(file_id)
+    achievement = file.achievement
+    
+    # التحقق من الصلاحيات
+    if achievement.user_id != session['user_id']:
+        flash('ليس لديك صلاحية لحذف هذا الملف', 'error')
+        return redirect(url_for('achievements'))
+    
+    # حذف الملف من النظام
+    if os.path.exists(file.file_path):
+        os.remove(file.file_path)
+    
+    db.session.delete(file)
+    db.session.commit()
+    
+    flash('تم حذف الملف بنجاح', 'success')
+    return redirect(url_for('edit_achievement', achievement_id=achievement.id))
+
+# ملف الإنجاز - تحميل ملف
+@app.route('/achievements/files/<int:file_id>/download')
+@login_required
+def download_achievement_file(file_id):
+    file = AchievementFile.query.get_or_404(file_id)
+    achievement = file.achievement
+    
+    # التحقق من الصلاحيات
+    if achievement.user_id != session['user_id']:
+        flash('ليس لديك صلاحية لتحميل هذا الملف', 'error')
+        return redirect(url_for('achievements'))
+    
+    return send_file(file.file_path, as_attachment=True, download_name=file.original_filename)
+
+# ملف الإنجاز - طباعة
+@app.route('/achievements/print')
+@login_required
+def print_achievements():
+    user = User.query.get(session['user_id'])
+    achievements = Achievement.query.filter_by(user_id=user.id).order_by(Achievement.date_achieved.desc()).all()
+    
+    return render_template('print_achievements.html', user=user, achievements=achievements)
 
 # إنشاء قاعدة البيانات
 def create_tables():
