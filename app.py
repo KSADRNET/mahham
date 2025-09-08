@@ -735,6 +735,78 @@ def print_achievements():
     
     return render_template('print_achievements.html', user=user, achievements=achievements)
 
+# ===== نظام التحديث التلقائي =====
+from auto_updater import updater
+
+# صفحة تحديث النظام
+@app.route('/system-update')
+@login_required
+def system_update():
+    # التحقق من صلاحيات المدير
+    user = User.query.get(session['user_id'])
+    if user.role != 'مدير':
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('system_update.html')
+
+# API - فحص التحديثات
+@app.route('/api/check-updates')
+@login_required
+def api_check_updates():
+    # التحقق من صلاحيات المدير
+    user = User.query.get(session['user_id'])
+    if user.role != 'مدير':
+        return jsonify({'status': 'error', 'message': 'غير مصرح لك'})
+    
+    result = updater.check_for_updates()
+    return jsonify(result)
+
+# API - تنفيذ التحديث
+@app.route('/api/perform-update', methods=['POST'])
+@login_required
+def api_perform_update():
+    # التحقق من صلاحيات المدير
+    user = User.query.get(session['user_id'])
+    if user.role != 'مدير':
+        return jsonify({'status': 'error', 'message': 'غير مصرح لك'})
+    
+    result = updater.perform_update()
+    return jsonify(result)
+
+# API - إنشاء نسخة احتياطية
+@app.route('/api/create-backup', methods=['POST'])
+@login_required
+def api_create_backup():
+    # التحقق من صلاحيات المدير
+    user = User.query.get(session['user_id'])
+    if user.role != 'مدير':
+        return jsonify({'status': 'error', 'message': 'غير مصرح لك'})
+    
+    result = updater.create_backup()
+    return jsonify(result)
+
+# API - حالة النظام
+@app.route('/api/system-status')
+@login_required
+def api_system_status():
+    # التحقق من صلاحيات المدير
+    user = User.query.get(session['user_id'])
+    if user.role != 'مدير':
+        return jsonify({'status': 'error', 'message': 'غير مصرح لك'})
+    
+    result = updater.get_system_status()
+    return jsonify(result)
+
+# API - فحص صحة التطبيق (للاستخدام الداخلي)
+@app.route('/health')
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'version': 'دكتورنت by DrNeT'
+    })
+
 # إنشاء قاعدة البيانات
 def create_tables():
     with app.app_context():

@@ -1,0 +1,24 @@
+{
+  "github": {
+    "sha": "acdc1d9",
+    "message": "Add files via upload",
+    "date": "2025-09-08T16:22:03Z",
+    "author": "KSADRNET"
+  },
+  "local": {
+    "current_commit": "acdc1d9",
+    "last_check": "2025-09-08T20:18:50.580124",
+    "last_update": "2025-09-08T20:18:50.580124"
+  },
+  "update_status": {
+    "status": "up_to_date",
+    "message": "البرنامج محدث لآخر إصدار",
+    "current_version": "acdc1d9"
+  },
+  "railway_status": {
+    "status": "online",
+    "message": "التطبيق يعمل بشكل طبيعي",
+    "response_time": 0.618043
+  },
+  "last_check": "2025-09-08T20:30:21.226602"
+}
