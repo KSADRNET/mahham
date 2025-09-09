@@ -2,7 +2,8 @@
 """
 اختبار نظام التحديث التلقائي
 Test Auto Update System
-دكتورنت by DrNeT
+صنع بواسطة دكتورنت للنظم الأمنية
+By DrNeT 0165395559
 """
 
 import sys

@@ -1,7 +1,8 @@
 """
 نظام التحديث التلقائي لمشروع إدارة المهام
 Auto Update System for Task Management Project
-دكتورنت by DrNeT
+صنع بواسطة دكتورنت للنظم الأمنية
+By DrNeT 0165395559
 """
 
 import requests
@@ -99,19 +100,40 @@ class AutoUpdater:
         }
     
     def trigger_railway_deploy(self):
-        """محاولة تحفيز إعادة النشر في Railway"""
+        """تحفيز إعادة النشر في Railway عبر Webhook إن توفر، وإلا محاولة تنشيط التطبيق"""
         try:
-            # محاولة الوصول للتطبيق لتحفيز إعادة التحميل
-            response = requests.get(f"{self.railway_app_url}/health", timeout=30)
-            
-            # إنشاء ملف trigger لإجبار Railway على إعادة النشر
+            # 1) إذا كان هناك Webhook من Railway (Environment: RAILWAY_DEPLOY_HOOK_URL)
+            deploy_hook = os.environ.get('RAILWAY_DEPLOY_HOOK_URL')
+            if deploy_hook:
+                try:
+                    hook_resp = requests.post(deploy_hook, timeout=30)
+                    if 200 <= hook_resp.status_code < 300:
+                        status_msg = 'تم استدعاء Webhook الخاص بـ Railway بنجاح'
+                        status = 'triggered'
+                    else:
+                        status_msg = f'فشل Webhook: {hook_resp.status_code}'
+                        status = 'error'
+                except Exception as he:
+                    status_msg = f'فشل استدعاء Webhook: {str(he)}'
+                    status = 'error'
+            else:
+                status_msg = 'لم يتم إعداد Webhook لعملية النشر (RAILWAY_DEPLOY_HOOK_URL)'
+                status = 'skipped'
+
+            # 2) محاولة الوصول للتطبيق لتحفيز أي كاش أو Health Check
+            try:
+                requests.get(f"{self.railway_app_url}/health", timeout=30)
+            except Exception:
+                pass
+
+            # 3) إنشاء ملف trigger محلياً (مفيد عند الاعتماد على push إلى GitHub خارجيًا)
             trigger_file = "railway_deploy_trigger.txt"
-            with open(trigger_file, 'w') as f:
+            with open(trigger_file, 'w', encoding='utf-8') as f:
                 f.write(f"Deploy triggered at: {datetime.now().isoformat()}")
-            
+
             return {
-                'status': 'triggered',
-                'message': 'تم تحفيز عملية النشر في Railway'
+                'status': status,
+                'message': status_msg
             }
         except Exception as e:
             return {

@@ -804,7 +804,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
-        'version': 'دكتورنت by DrNeT'
+        'version': 'صنع بواسطة دكتورنت للنظم الأمنية - By DrNeT 0165395559'
     })
 
 # إنشاء قاعدة البيانات
